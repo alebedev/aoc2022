@@ -2,40 +2,48 @@ import java.lang.RuntimeException
 
 fun getRucksackScore() {
     var result = 0
-    for (pair in readRucksack()) {
-        result += charScore(findDuplicate(pair))
+    for (group in readRucksack()) {
+        result += charScore(findGroupBadge(group))
     }
     println("Total score: $result")
 }
 
-typealias Content = Pair<String, String>
+typealias Group = MutableList<String>
 
-fun readRucksack(): Sequence<Content> {
-    return generateSequence(::readLine).map {
-        val len = it.length
-        if (len % 2  > 0) {
-            throw RuntimeException("Odd length $len")
+fun readRucksack(): Iterable<Group> {
+    val result = mutableListOf<Group>()
+    var group: Group
+    generateSequence(::readLine).forEachIndexed { i, line ->
+        if (i % 3 == 0) {
+            group = mutableListOf()
+            result.add(group)
+        } else {
+            group = result.last()
         }
-        Pair(it.substring(0 until (len / 2)), it.substring(len / 2))
+        group.add(line)
     }
-
+    return result.toList()
 }
 
-fun findDuplicate(content: Content): Char {
-    val firstChars = mutableSetOf<Char>()
-    for (char in content.first) {
-        firstChars.add(char)
+fun findGroupBadge(group: Group): Char {
+    val sets = group.map {
+        it.toSet()
     }
-    for (char in content.second) {
-        if (firstChars.contains(char)) {
-            return char
-        }
+    val commonChars = sets.reduce {chars, lineChars -> chars.intersect(lineChars)}
+    if (commonChars.size != 1) {
+        throw Error("Expected to find exactly one unique char")
     }
-    throw RuntimeException("No duplicate it contents")
+    return commonChars.first()
 }
 
 fun charScore(char: Char) = when (char) {
-    in 'a'..'z' -> { char.code - 'a'.code + 1 }
-    in 'A'..'Z' -> { char.code - 'A'.code + 27 }
+    in 'a'..'z' -> {
+        char.code - 'a'.code + 1
+    }
+
+    in 'A'..'Z' -> {
+        char.code - 'A'.code + 27
+    }
+
     else -> throw RuntimeException("Unexpected char $char")
 }
