@@ -5,7 +5,8 @@ fun main() {
 object Crane {
     fun solve() {
         val input = readInput()
-        println(input)
+        val result = runMoves(input.state, input.moves)
+        println("Top of stacks: ${result.map { it.first() }.joinToString("")}")
     }
 
     private fun readInput(): Input {
@@ -54,9 +55,23 @@ object Crane {
         return Input(state, moves)
     }
 
-    private data class Move(val from: Int, val to: Int, val count: Int)
+    private fun runMoves(state: List<List<String>>, moves: List<Move>): List<List<String>> {
+        val result = state.map { it.toMutableList() }
+        for (move in moves) {
+            val fromStack = result[move.from]
+            val loaded = fromStack.subList(0, move.count).toList() //.reversed()
+            for (i in loaded) {
+                fromStack.removeAt(0)
+            }
 
-    private data class Input(val state: List<List<String>>, val moves: List<Move>)
+            result[move.to].addAll(0,loaded)
+        }
+        return result
+    }
+
+    data class Move(val from: Int, val to: Int, val count: Int)
+
+    data class Input(val state: List<List<String>>, val moves: List<Move>)
 
 }
 
