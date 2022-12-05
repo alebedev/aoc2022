@@ -1,5 +1,5 @@
 // Day 1
-fun getMaxCalories() {
+fun main() {
     val lines = generateSequence(::readLine)
     val sums = mutableListOf<Int>()
     var cur = 0

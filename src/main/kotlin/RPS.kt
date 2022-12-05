@@ -1,7 +1,7 @@
 import java.lang.RuntimeException
 
 // Day 2
-fun getRpsScore() {
+fun main() {
     val input = readInput()
     var result = 0
     for (pair in input) {
@@ -24,7 +24,7 @@ fun getRpsScore() {
     println("Total score: $result")
 }
 
-fun readInput(): Iterable<Pair<Move, Result>> {
+private fun readInput(): Iterable<Pair<Move, Result>> {
     val result = mutableListOf<Pair<Move, Result>>()
     val lines = generateSequence(::readLine)
     for (line in lines) {

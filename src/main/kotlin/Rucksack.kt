@@ -1,6 +1,6 @@
 import java.lang.RuntimeException
 
-fun getRucksackScore() {
+fun main() {
     var result = 0
     for (group in readRucksack()) {
         result += charScore(findGroupBadge(group))
