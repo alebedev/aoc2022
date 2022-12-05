@@ -8,9 +8,9 @@ fun main() {
     println("Total score: $result")
 }
 
-typealias Group = MutableList<String>
+private typealias Group = MutableList<String>
 
-fun readRucksack(): Iterable<Group> {
+private fun readRucksack(): Iterable<Group> {
     val result = mutableListOf<Group>()
     var group: Group
     generateSequence(::readLine).forEachIndexed { i, line ->
@@ -25,7 +25,7 @@ fun readRucksack(): Iterable<Group> {
     return result.toList()
 }
 
-fun findGroupBadge(group: Group): Char {
+private fun findGroupBadge(group: Group): Char {
     val sets = group.map {
         it.toSet()
     }
@@ -36,7 +36,7 @@ fun findGroupBadge(group: Group): Char {
     return commonChars.first()
 }
 
-fun charScore(char: Char) = when (char) {
+private fun charScore(char: Char) = when (char) {
     in 'a'..'z' -> {
         char.code - 'a'.code + 1
     }
