@@ -6,11 +6,18 @@ private object DirWalk {
     fun solve() {
         val tree = buildTree(readInput())
         val sizes = getDirSizes(tree)
-        for (size in sizes) {
-            println("${size.key.name} ${size.value}")
-        }
-        val smallDirsTotal = sizes.filter { it.value <= 100000 }.values.sum()
+//        for (size in sizes) {
+//            println("${size.key.name} ${size.value}")
+//        }
+        val smallDirsTotal = sizes.filter { it.value <= 100_000 }.values.sum()
         println("Small dirs total: $smallDirsTotal")
+        val totalSpace = 70_000_000
+        val targetFreeSpace = 30_000_000
+        val spaceToFree = targetFreeSpace - (totalSpace - sizes.getValue(tree))
+        println("Space to free: $spaceToFree")
+        val sortedDirs = sizes.toList().sortedBy { it.second }
+        val smallestToDelete = sortedDirs.find { it.second >= spaceToFree }
+        println("Delete dir ${smallestToDelete?.first?.name}, size: ${smallestToDelete?.second}")
     }
 
     private fun readInput(): Sequence<Input> {
