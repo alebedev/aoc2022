@@ -4,13 +4,47 @@ fun main() {
 
 private object Forest {
     fun solve() {
-        println("Visible trees: ${countVisible(readInput())}")
+        val grid = readInput()
+        println("Visible trees: ${countVisible(grid)}")
+        println("Max scenic score: ${maxScenicScore(grid)}")
     }
 
     private fun readInput(): Grid {
         return generateSequence(::readLine).map {
             it.split("").filterNot { it.isEmpty() }.map { it.toInt(10) }
         }.toList()
+    }
+
+    private fun maxScenicScore(trees: Grid): Int {
+        var result = 0
+        trees.forEachIndexed { i, line ->
+            line.forEachIndexed { j, tree ->
+                var leftView = 0
+                for (left in (j - 1) downTo 0) {
+                    leftView += 1
+                    if (trees[i][left] >= tree) break
+                }
+                var rightView = 0
+                for (right in (j + 1) until line.size) {
+                    rightView += 1
+                    if (trees[i][right] >= tree) break
+                }
+
+                var topView = 0
+                for (top in (i - 1) downTo 0) {
+                    topView += 1
+                    if (trees[top][j] >= tree) break
+                }
+                var bottomView = 0
+                for (bottom in (i + 1) until trees.size) {
+                    bottomView += 1
+                    if (trees[bottom][j] >= tree) break
+
+                }
+                result = maxOf(result, leftView * rightView * topView * bottomView)
+            }
+        }
+        return result
     }
 
     private fun countVisible(trees: Grid): Int {
