@@ -8,7 +8,7 @@ fun main() {
 private object Rope {
     fun solve() {
         val moves = readInput()
-        println("tail visited ${getTailPath(moves).toSet().size}")
+        println("tail visited ${getTailPath(moves, 10).toSet().size}")
     }
 
     private fun readInput(): Sequence<Move> {
@@ -26,22 +26,30 @@ private object Rope {
         }
     }
 
-    private fun getTailPath(moves: Sequence<Move>): List<Pos> {
+    private fun getTailPath(moves: Sequence<Move>, ropeSize: Int): List<Pos> {
         var head = Pos(0, 0)
-        var tail = Pos(0, 0)
+        var rope = Array<Pos>(ropeSize) {head}
         val path = mutableListOf<Pos>()
         moves.forEach {
             println("Move $it")
             for (i in 0 until it.length) {
-                when (it.direction) {
-                    Direction.Up -> head = Pos(head.x, head.y + 1)
-                    Direction.Down -> head = Pos(head.x, head.y - 1)
-                    Direction.Left -> head = Pos(head.x - 1, head.y)
-                    Direction.Right -> head = Pos(head.x + 1, head.y)
+                head = when (it.direction) {
+                    Direction.Up -> Pos(head.x, head.y + 1)
+                    Direction.Down -> Pos(head.x, head.y - 1)
+                    Direction.Left -> Pos(head.x - 1, head.y)
+                    Direction.Right -> Pos(head.x + 1, head.y)
                 }
-                tail = nextTailPos(head, tail)
-                println("Step: $head $tail")
-                path.add(tail)
+                var prev = head
+                rope = Array<Pos>(ropeSize) { i ->
+                    if (i == 0)
+                        head
+                    else {
+                        val pos = nextTailPos(prev, rope[i])
+                        prev = pos
+                        pos
+                    }
+                }
+                path.add(rope.last())
             }
         }
         return path
