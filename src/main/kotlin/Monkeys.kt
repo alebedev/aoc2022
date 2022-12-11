@@ -1,3 +1,5 @@
+import java.math.BigInteger
+
 fun main() = Monkeys.solve()
 
 object Monkeys {
@@ -8,17 +10,17 @@ object Monkeys {
         for (monkey in input) {
             inspectedBy.add(monkey.id, 0)
         }
-        for (turn in 1..20) {
+        for (turn in 1..10000) {
             runTurn(input)
-            println("After turn $turn, items by monkey ${input.map { it.items }}")
+//            println("After turn $turn, items by monkey ${input.map { it.items }}")
         }
         val inspected = inspectedBy.sorted().takeLast(2)
-        println("Inspected: $inspected, score: ${inspected.first() * inspected.last()}")
+        println("Inspected: $inspected, score: ${inspected.first().toBigInteger() * inspected.last().toBigInteger()}")
     }
 
     private fun readInput(): List<Monkey> {
         var id = 0
-        var items = mutableListOf<Int>()
+        var items = mutableListOf<BigInteger>()
         var operation: Operation? = null
         var testDiv = 0
         var ifTrue = 0
@@ -38,13 +40,13 @@ object Monkeys {
             when {
                 it.startsWith(monkeyPrefix) -> {
                     id = it.substringAfter(monkeyPrefix).substringBefore(":").toInt(10)
-                    items = mutableListOf<Int>()
+                    items = mutableListOf<BigInteger>()
                     testDiv = 0
                     ifTrue = 0
                     ifFalse = 0
                 }
                 it.startsWith(itemsPrefix) -> {
-                    items = it.substringAfter(itemsPrefix).split(", ").map { it.toInt(10) }.toMutableList()
+                    items = it.substringAfter(itemsPrefix).split(", ").map { it.toBigInteger(10) }.toMutableList()
                 }
                 it.startsWith(operationPrefix) -> {
                     operation = parseOperation(it)
@@ -70,22 +72,23 @@ object Monkeys {
     private fun runTurn(input: List<Monkey>) {
         for (monkey in input) {
             runRound(input, monkey)
-            println("round ${monkey.id} ends")
+//            println("round ${monkey.id} ends")
         }
     }
 
     private fun runRound(input: List<Monkey>, monkey: Monkey) {
+        val base = input.map { it.test.testDiv }.reduce {acc, x -> x * acc}.toBigInteger()
         for (item in monkey.items) {
-            val worry = monkey.operation.exec(item) / 3
+            val worry = monkey.operation.exec(item).mod(base)
             inspectedBy[monkey.id] += 1
-            println("Item $item, worry after inspection $worry")
-            val target = if (worry % monkey.test.testDiv == 0) {
+//            println("Item $item, worry after inspection $worry")
+            val target = if (worry.mod(monkey.test.testDiv.toBigInteger()) == BigInteger.ZERO) {
                 input[monkey.test.ifTrue]
             } else {
                 input[monkey.test.ifFalse]
             }
             target.items.add(worry)
-            println("Passing to monkey ${target.id}")
+//            println("Passing to monkey ${target.id}")
         }
         monkey.items.clear()
     }
@@ -98,11 +101,11 @@ val testPrefix = "  Test: divisible by "
 val ifTruePrefix = "    If true: throw to monkey "
 val ifFalsePrefix = "    If false: throw to monkey "
 
-private data class Monkey(val id: Int, val items: MutableList<Int>, val operation: Operation, val test: Test)
+private data class Monkey(val id: Int, val items: MutableList<BigInteger>, val operation: Operation, val test: Test)
 
 sealed interface OpInput
 object Old : OpInput
-data class Just(val value: Int): OpInput
+data class Just(val value: BigInteger): OpInput
 
 enum class Op {
     Plus,
@@ -110,7 +113,7 @@ enum class Op {
 }
 
 data class Operation(val a: OpInput, val b: OpInput, val op: Op) {
-    fun exec(input: Int): Int {
+    fun exec(input: BigInteger): BigInteger {
         val x = when (a) {
             Old -> input
             is Just -> a.value
@@ -141,7 +144,7 @@ private fun parseOperation(line: String): Operation {
 
 private fun parseOpInput(string: String): OpInput = when (string) {
     "old" -> Old
-    else -> Just(string.toInt(10))
+    else -> Just(string.toBigInteger(10))
 }
 
 private data class Test(val testDiv: Int, val ifTrue: Int, val ifFalse: Int)
