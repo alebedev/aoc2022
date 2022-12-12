@@ -3,15 +3,15 @@ fun main() = Path.solve()
 private typealias Matrix = List<List<Int>>
 
 private object Path {
-    const val START = -1
+    const val START = 0
     const val TARGET = ('z'.code - 'a'.code) + 1
 
     fun solve() {
         val input = readInput()
-        val start = findPos(input, START)!!
-        val target = findPos(input, TARGET)!!
+        val starts = findAll(input, START)
+        val target = findAll(input, TARGET).first()
         val graph = buildGraph(input)
-        println("Shortest path from $start to $target : ${shortestPath(graph, start, target)} steps")
+        println("Shorted max elevation path: ${starts.map { shortestPath(graph, it, target) }.filter { it > 0 }.min()}")
     }
 
     private fun readInput(): Matrix {
@@ -27,15 +27,16 @@ private object Path {
         }.toList()
     }
 
-    private fun findPos(matrix: Matrix, target: Int): Pos? {
+    private fun findAll(matrix: Matrix, target: Int): List<Pos> {
+        val result = mutableListOf<Pos>()
         for (y in matrix.indices) {
             for (x in matrix[y].indices) {
                 if (matrix[y][x] == target) {
-                    return Pos(x, y)
+                    result.add(Pos(x, y))
                 }
             }
         }
-        return null
+        return result
     }
 
     private fun buildGraph(matrix: Matrix): Map<Pos, Node> {
