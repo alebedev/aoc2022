@@ -2,33 +2,26 @@ fun main() = Packets.solve()
 
 private object Packets {
     fun solve() {
-        val input = readInput()
-        var result = 0
-        for (i in input.indices) {
-            if (input[i].first < input[i].second) {
-                result += i + 1
-            }
-        }
-        println("Problem 1: $result")
+        val input = readInput().toMutableList()
+        val dividers = setOf(
+            Lst(listOf(Lst(listOf(Num(2))))),
+            Lst(listOf(Lst(listOf(Num(6)))))
+        )
+        input.addAll(dividers)
+        val sorted = input.sorted()
+        println("Problem 2: ${(sorted.indexOf(dividers.first()) + 1) * (sorted.indexOf(dividers.last()) + 1)}")
     }
 
-    private fun readInput(): List<Pair<Item, Item>> {
-        val result = mutableListOf<Pair<Item, Item>>()
+    private fun readInput(): List<Item> {
         val items = mutableListOf<Item>()
         generateSequence(::readLine).forEach {
             when {
-                it.isEmpty() -> {
-                    require(items.size == 2)
-                    result.add(Pair(items.first(), items.last()))
-                    items.clear()
-                }
-
-                else -> {
+                !it.isEmpty() -> {
                     items.add(parseItem(it))
                 }
             }
         }
-        return result
+        return items
     }
 
     private fun parseItem(line: String): Item {
