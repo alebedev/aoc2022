@@ -5,7 +5,7 @@ private object Sand {
         val input = readInput()
         val (grid, start) = inputToGrid(input)
         drawGrid(grid)
-        println()
+        println("Start: $start")
         drawGrid(addSand(grid, start))
     }
 
@@ -22,7 +22,7 @@ private object Sand {
                 if (variant.y >= result.size) {
                     return null
                 }
-                if (variant.x < 0 || variant.x >= result.size) {
+                if (variant.x < 0 || variant.x >= result.first().size) {
                     return null
                 }
                 if (result[variant.y][variant.x] == Cell.Empty) {
@@ -38,13 +38,13 @@ private object Sand {
                 val next = nextPos(pos) ?: return false
                 if (next == pos) {
                     result[pos.y][pos.x] = Cell.Sand
-                    return true
+                    return pos != start
                 }
                 pos = next
             }
         }
 
-        var iterations = 0
+        var iterations = 1
         while (percolate()) {
             iterations += 1
         }
@@ -65,10 +65,10 @@ private object Sand {
     private fun inputToGrid(input: List<List<Pos>>): Pair<List<MutableList<Cell>>, Pos> {
         val start = Pos(500, 0)
         val positions = input.flatten()
-        val minX = minOf(start.x, positions.map { it.x }.min())
-        val maxX = maxOf(start.x, positions.map { it.x }.max())
+        val minX = minOf(start.x, positions.map { it.x }.min()) - 10
+        val maxX = maxOf(start.x, positions.map { it.x }.max()) + 10
         val minY = minOf(start.y, positions.map { it.y }.min())
-        val maxY = maxOf(start.y, positions.map { it.y }.max())
+        val maxY = maxOf(start.y, positions.map { it.y }.max()) + 2
         println("$minX $maxX $minY $maxY")
         val result = mutableListOf<MutableList<Cell>>()
         for (y in minY..maxY) {
@@ -80,7 +80,7 @@ private object Sand {
         }
 
         fun fillWithRock(grid: List<MutableList<Cell>>, from: Pos, to: Pos) {
-            println("$from $to")
+//            println("$from $to")
 
             if (from.x != to.x) {
                 val src = Pos(minOf(from.x, to.x), from.y)
@@ -106,6 +106,8 @@ private object Sand {
                 from = to
             }
         }
+        fillWithRock(result, Pos(minX, maxY), Pos(maxX, maxY))
+
         return Pair(result, Pos(start.x - minX, start.y - minY))
     }
 
