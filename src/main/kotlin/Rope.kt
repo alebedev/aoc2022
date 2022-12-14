@@ -28,7 +28,7 @@ private object Rope {
 
     private fun getTailPath(moves: Sequence<Move>, ropeSize: Int): List<Pos> {
         var head = Pos(0, 0)
-        var rope = Array<Pos>(ropeSize) {head}
+        var rope = Array<Pos>(ropeSize) { head }
         val path = mutableListOf<Pos>()
         moves.forEach {
             println("Move $it")
@@ -40,11 +40,11 @@ private object Rope {
                     Direction.Right -> Pos(head.x + 1, head.y)
                 }
                 var prev = head
-                rope = Array<Pos>(ropeSize) { i ->
+                rope = Array<Pos>(ropeSize) { j ->
                     if (i == 0)
                         head
                     else {
-                        val pos = nextTailPos(prev, rope[i])
+                        val pos = nextTailPos(prev, rope[j])
                         prev = pos
                         pos
                     }
