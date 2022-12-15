@@ -65,8 +65,8 @@ private object Sand {
     private fun inputToGrid(input: List<List<Pos>>): Pair<List<MutableList<Cell>>, Pos> {
         val start = Pos(500, 0)
         val positions = input.flatten()
-        val minX = minOf(start.x, positions.map { it.x }.min()) - 10
-        val maxX = maxOf(start.x, positions.map { it.x }.max()) + 10
+        val minX = minOf(start.x, positions.map { it.x }.min()) - 200
+        val maxX = maxOf(start.x, positions.map { it.x }.max()) + 200
         val minY = minOf(start.y, positions.map { it.y }.min())
         val maxY = maxOf(start.y, positions.map { it.y }.max()) + 2
         println("$minX $maxX $minY $maxY")
