@@ -3,7 +3,7 @@ fun main() = Valves.solve()
 private object Valves {
     fun solve() {
         val nodes = readInput()
-        val maxPressure = findMaxPressureRelease(nodes, "AA", 30)
+        val maxPressure = findMaxPressureRelease(nodes, "AA", 26)
         println("Max releasable pressure: ${maxPressure}")
     }
 
@@ -62,19 +62,48 @@ private object Valves {
             return result
         }
 
-        fun pathFlow(path: List<String>): Int {
+        fun pathFlowPair(first: List<String>, second: List<String>): Int {
             var result = 0
-            var time = 0
             var flow = 0
-            var prev = startPos
-            for (item in path) {
-                val dTime = distanceBetween(prev, item) + 1
-                result += flow * dTime
-                flow += nodes[item]!!.pressure
-                time += dTime
-                prev = item
+            val openValves = mutableSetOf<String>()
+            fun openValve(valve: String) {
+                if (valve in openValves) return
+                openValves.add(valve)
+                flow += nodes[valve]!!.pressure
             }
-            result += flow * (remainingTime - time)
+
+            val pathA = first.toMutableList()
+            val pathB = second.toMutableList()
+            var a = startPos
+            var b = startPos
+            var timeA = 0
+            var timeB = 0
+            var nextA: String? = null
+            var nextB: String? = null
+            for (i in 0..remainingTime) {
+                result += flow
+                if (i == timeA) {
+                    if (i > 0 && nextA != null) {
+                        a = nextA
+                        openValve(a)
+                    }
+                    nextA = pathA.removeFirstOrNull()
+                    if (nextA != null) {
+                        timeA += distanceBetween(a, nextA) + 1
+                    }
+                }
+                if (i == timeB) {
+                    if (i > 0 && nextB != null) {
+                        b = nextB
+                        openValve(b)
+                    }
+                    nextB = pathB.removeFirstOrNull()
+                    if (nextB != null) {
+                        timeB += distanceBetween(b, nextB) + 1
+                    }
+
+                }
+            }
             return result
         }
 
@@ -107,10 +136,16 @@ private object Valves {
             }
         }
         println("Number of paths ${paths.size}")
+        var max = 0
+        for (a in paths) {
+            for (b in paths) {
+                max = maxOf(max, pathFlowPair(a, b))
+            }
+        }
 //        println("Distance ${distanceBetween("BB", "JJ")}")
-        val bestPath = paths.sortedBy { pathFlow(it) }.last()
-        println("Best path $bestPath")
-        return pathFlow(bestPath)
+//        val bestPath = paths.sortedBy { pathFlow(it) }.last()
+//        println("Best path $bestPath")
+        return max
     }
 
     data class Node(val label: String, val pressure: Int, val edges: List<String>)
