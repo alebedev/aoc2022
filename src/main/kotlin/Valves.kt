@@ -137,10 +137,15 @@ private object Valves {
         }
         println("Number of paths ${paths.size}")
         var max = 0
+        var i = 0
         for (a in paths) {
             for (b in paths) {
-                max = maxOf(max, pathFlowPair(a, b))
+                if (a != b) {
+                    max = maxOf(max, pathFlowPair(a, b))
+                }
             }
+            i += 1
+            println("$i")
         }
 //        println("Distance ${distanceBetween("BB", "JJ")}")
 //        val bestPath = paths.sortedBy { pathFlow(it) }.last()
