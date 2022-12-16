@@ -22,49 +22,95 @@ private object Valves {
     }
 
     private fun findMaxPressureRelease(nodes: Map<String, Node>, startPos: String, remainingTime: Int): Int {
-        data class State(val openValves: Set<String>, val pos: String) {
-            fun releasePerMin() = openValves.sumOf { nodes[it]!!.pressure }
+        val distances = mutableMapOf<String, Int>()
+
+        fun distanceKey(a: String, b: String) = listOf(a, b).sorted().joinToString("")
+
+        fun distanceBetween(a: String, b: String): Int {
+            if (a == b) {
+                return 0
+            }
+            if (distanceKey(a, b) in distances) {
+                return distances[distanceKey(a, b)]!!
+            }
+            val queue = mutableListOf(a)
+            while (queue.isNotEmpty()) {
+                val item = queue.removeFirst()
+                if (item == b) {
+                    return distances[distanceKey(a, item)]!!
+                }
+                val dist = distanceBetween(a, item)
+                for (edge in nodes[item]!!.edges) {
+                    if (distanceKey(a, edge) !in distances) {
+                        distances[distanceKey(a, edge)] = dist + 1
+                    }
+                    if (edge !in queue) {
+                        queue.add(edge)
+                    }
+                }
+            }
+            throw Error("Path not found $a->$b")
         }
 
-        val initialState = State(emptySet(), startPos)
-
-        val bestTimeFor = mutableMapOf<State, Int>()
-
-        // DFS
-        fun maxFor(state: State, remainingTime: Int): Int {
-            if (remainingTime <= 1) {
-                return state.releasePerMin() * remainingTime
-            }
-            val variants = mutableSetOf<State>()
-            if (state.pos !in state.openValves) {
-                variants.add(
-                    State(
-                        state.openValves.plus(state.pos),
-                        state.pos
-                    )
-                )
-            }
-            variants.addAll(nodes[state.pos]!!.edges.map { edge ->
-                State(
-                    state.openValves,
-                    edge
-                )
-            })
-            variants.removeIf {
-                bestTimeFor.getOrDefault(it, 0) >= remainingTime - 1
-            }
-            variants.forEach {
-                bestTimeFor[it] = remainingTime - 1
-            }
-            var result = state.releasePerMin() * remainingTime
-            if (variants.isNotEmpty()) {
-//                println("variants")
-                result = maxOf(result, variants.maxOf { state.releasePerMin() + maxFor(it, remainingTime - 1) })
+        fun pathTime(path: List<String>): Int {
+            var result = 0
+            var prev = startPos
+            for (item in path) {
+                result += distanceBetween(prev, item) + 1
+                prev = item
             }
             return result
         }
 
-        return maxFor(initialState, remainingTime)
+        fun pathFlow(path: List<String>): Int {
+            var result = 0
+            var time = 0
+            var flow = 0
+            var prev = startPos
+            for (item in path) {
+                val dTime = distanceBetween(prev, item) + 1
+                result += flow * dTime
+                flow += nodes[item]!!.pressure
+                time += dTime
+                prev = item
+            }
+            result += flow * (remainingTime - time)
+            return result
+        }
+
+        val paths = mutableSetOf<List<String>>(listOf())
+        val valves = nodes.keys.filter { nodes[it]!!.pressure > 0 }
+        for (level in 0..valves.size) {
+            println("$level")
+            val newItems = mutableSetOf<List<String>>()
+            for (valve in valves) {
+                for (prefix in paths) {
+                    if (valve in prefix) {
+                        continue
+                    }
+
+                    val path = prefix.plus(valve)
+                    if (path in paths) {
+                        continue
+                    }
+//                    println("$valve $prefix")
+                    if (pathTime(path) < remainingTime) {
+                        newItems.add(path)
+                    }
+                }
+            }
+
+            if (!paths.addAll(newItems)) {
+                break
+            } else {
+                //println("NI ${newItems.size}")
+            }
+        }
+        println("Number of paths ${paths.size}")
+//        println("Distance ${distanceBetween("BB", "JJ")}")
+        val bestPath = paths.sortedBy { pathFlow(it) }.last()
+        println("Best path $bestPath")
+        return pathFlow(bestPath)
     }
 
     data class Node(val label: String, val pressure: Int, val edges: List<String>)
