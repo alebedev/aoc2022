@@ -18,12 +18,45 @@ private object Tetris {
         winds.clear()
         winds.addAll(readInput())
 
-        visualize()
-        while (rocks < 2022) {
+        val cache = mutableMapOf<Int, Triple<Int, Int, List<Int>>>()
+        var cycleSize = Int.MAX_VALUE
+        var cycleHeight = 0
+        val target = 1_000_000_000_000
+        var cycles = 0L
+        var currentTarget = target
+        while (rocks < currentTarget) {
+            if (cycleSize == Int.MAX_VALUE) {
+                if (fallingRock == null && rocks > 0 && rocks % 5 == 0) {
+//                    println("Rock cycle, round $turn, ${turn % winds.size}")
+                    val heights = heights()
+                    val minHeight = heights().min()
+                    val dHeights = heights.map { it - minHeight }
+                    val (cachedRocks, cachedMinHeight, cachedDh) = cache.getOrDefault(
+                        turn % winds.size,
+                        Triple(0, 0, listOf<Int>())
+                    )
+                    if (dHeights == cachedDh) {
+                        cycleSize = rocks - cachedRocks
+                        cycleHeight = minHeight - cachedMinHeight
+                        println("Cycle rocks=${cycleSize} height=$cycleHeight $dHeights")
+                        currentTarget = rocks + ((target - rocks) % cycleSize)
+                        cycles = (target - rocks) / cycleSize
+                        println("Setting new target $currentTarget")
+                    } else {
+                        cache.put(turn % winds.size, Triple(rocks, minHeight, dHeights))
+                    }
+                    //println("$dHeights ${turn % winds.size}")
+                }
+            }
             tick()
         }
-        println("Total height: $highestRock")
 
+        println("Total height: shortcut=$highestRock ${highestRock + cycleHeight * cycles}")
+
+    }
+
+    fun heights(): List<Int> {
+        return (0 until width).map { x -> (highestRock downTo 0).first { y -> cells[y][x] == Cell.StableRock } }
     }
 
     private fun tick() {
