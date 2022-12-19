@@ -34,40 +34,86 @@ private object Robots {
     }
 
     private fun maxGeodes(blueprint: Blueprint): Int {
-        println("Max for ${blueprint.id}...")
+        println("Max for ${blueprint}...")
+        val maxCost = buildMap {
+            Resource.values().forEach { resource ->
+                put(resource, blueprint.recipes.maxOf { it.value.cost.getOrDefault(resource, 0) })
+            }
+        }
+        println("Max costs $maxCost")
+        fun isGoodStep(step: Step, resource: Resource): Boolean {
+//            println("$resource, $maxCost")
+            if (resource === Resource.Geode) {
+                return true
+            }
+            if (step.resources.getOrDefault(resource, 0) > maxCost[resource]!! * 2) {
+//                println("Too much, bad step ${step.resources} $maxCost $resource")
+                return false
+            }
+            return true
+        }
+
         fun nextSteps(step: Step): List<Step> {
-            val result = mutableListOf(step.nextStepWithIdle())
+            val result = mutableListOf<Step>()
             for (resource in Resource.values()) {
                 val cost = blueprint.recipes[resource]!!.cost
-                if (step.hasEnough(cost)) {
+                if (step.hasEnough(cost) && isGoodStep(step, resource)) {
                     result.add(step.nextStepWithBuild(resource, cost))
                 }
+            }
+            if (result.size < Resource.values().size) {
+                result.add(0, step.nextStepWithIdle())
             }
             return result
         }
 
-        val queue = mutableListOf<Step>(
+
+        val stack = mutableListOf<Step>(
             Step(mapOf(), mapOf(Pair(Resource.Ore, 1)), null)
         )
+        val maxGeodesAtStep = mutableMapOf<Int, Int>()
 
         var maxGeodes = 0
         var i = 0
-        while (queue.isNotEmpty()) {
+        while (stack.isNotEmpty()) {
             i += 1
-            val step = queue.removeFirst()
-            if (i % 100_000 == 0) {
-                println("step $i, depth=${step.turnsTotal()}, max=$maxGeodes")
+            val step = stack.removeLast()
+            if (i % 1_000_000 == 0) {
+                println("step ${i / 1_000_000}M, depth=${step.time()}, max=$maxGeodes, stack size=${stack.size}")
             }
+            // Skip if we reached this exact state before
+//            val timeKey = Step(step.resources, step.robots, null)
+//            if (stepTime.getOrDefault(timeKey, Int.MAX_VALUE) < step.time()) {
+//                continue
+//            } else {
+//                stepTime[timeKey] = step.time()
+//            }
+
             val geodes = step.resources.getOrDefault(Resource.Geode, 0)
             maxGeodes = maxOf(maxGeodes, geodes)
-            if (step.turnsTotal() >= MAX_TURNS) {
+            maxGeodesAtStep[step.time()] = maxOf(geodes, maxGeodesAtStep.getOrDefault(step.time(), 0))
+
+            val remainingTime = 1 + MAX_TURNS - step.time()
+            if (remainingTime <= 0) {
                 continue
             }
-            if (geodes + 2 < maxGeodes) {
+
+            val maxPossibleGeodes =
+                geodes + step.robots.getOrDefault(Resource.Geode, 0) * remainingTime + (1..remainingTime).sum()
+            if (maxPossibleGeodes <= maxGeodes) {
                 continue
             }
-            queue.addAll(nextSteps(step))
+
+            if (maxGeodesAtStep[step.time()]!! > geodes + 1) {
+                continue
+            }
+//            if (geodes + 2 < maxGeodes) {
+//                continue
+//            }
+            stack.addAll(nextSteps(step))
         }
+        println("$maxGeodesAtStep")
+        println("max= ${maxGeodes}")
         return maxGeodes
     }
 
@@ -88,7 +134,7 @@ private object Robots {
     }
 
     private data class Step(val resources: Map<Resource, Int>, val robots: Map<Resource, Int>, val parent: Step?) {
-        fun turnsTotal(): Int = (parent?.turnsTotal() ?: 0) + 1
+        fun time(): Int = (parent?.time() ?: 0) + 1
         fun nextStepWithIdle(): Step = Step(
             nextResources(),
             robots,
