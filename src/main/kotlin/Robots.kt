@@ -1,12 +1,13 @@
 fun main() = Robots.solve()
 
 private object Robots {
-    const val MAX_TURNS = 24
+    const val MAX_TURNS = 32
 
     fun solve() {
-        val blueprints = readInput()
-        val scores = blueprints.map { maxGeodes(it) * it.id }.sum()
-        println("Total scores: ${scores}")
+        val blueprints = readInput().take(3)
+//        println("1st: ${maxGeodes(blueprints.first())}")
+        val score = blueprints.map { maxGeodes(it) }.reduce { x, y -> x * y }
+        println("Total score: ${score}")
     }
 
     private fun readInput(): List<Blueprint> = generateSequence(::readLine).map { line ->
@@ -46,54 +47,64 @@ private object Robots {
             if (resource === Resource.Geode) {
                 return true
             }
-            if (step.resources.getOrDefault(resource, 0) > maxCost[resource]!! * 2) {
-//                println("Too much, bad step ${step.resources} $maxCost $resource")
+            if (step.robots.getOrDefault(resource, 0) > maxCost[resource]!!) {
                 return false
             }
             return true
         }
+
+        // TODO: Cap resources when no longer relevant
+        fun normalizeNextStep(nextStep: Step): Step = nextStep
 
         fun nextSteps(step: Step): List<Step> {
             val result = mutableListOf<Step>()
             for (resource in Resource.values()) {
                 val cost = blueprint.recipes[resource]!!.cost
                 if (step.hasEnough(cost) && isGoodStep(step, resource)) {
-                    result.add(step.nextStepWithBuild(resource, cost))
+                    val nextStep = normalizeNextStep(step.nextStepWithBuild(resource, cost))
+                    if (resource == Resource.Geode) {
+                        return listOf(nextStep)
+                    } else {
+                        result.add(nextStep)
+                    }
                 }
             }
             if (result.size < Resource.values().size) {
-                result.add(0, step.nextStepWithIdle())
+                result.add(step.nextStepWithIdle())
             }
             return result
         }
 
 
         val stack = mutableListOf<Step>(
-            Step(mapOf(), mapOf(Pair(Resource.Ore, 1)), null)
+            Step(mapOf(), mapOf(Pair(Resource.Ore, 1)), 1)
         )
+        val seenStates = mutableSetOf<String>()
         val maxGeodesAtStep = mutableMapOf<Int, Int>()
 
         var maxGeodes = 0
         var i = 0
         while (stack.isNotEmpty()) {
-            i += 1
             val step = stack.removeLast()
-            if (i % 1_000_000 == 0) {
-                println("step ${i / 1_000_000}M, depth=${step.time()}, max=$maxGeodes, stack size=${stack.size}")
+            if (step.fingerprint() in seenStates) {
+                continue
             }
-            // Skip if we reached this exact state before
-//            val timeKey = Step(step.resources, step.robots, null)
-//            if (stepTime.getOrDefault(timeKey, Int.MAX_VALUE) < step.time()) {
-//                continue
-//            } else {
-//                stepTime[timeKey] = step.time()
-//            }
+            i += 1
+            seenStates.add(step.fingerprint())
+            if (i % 1_000_000 == 0) {
+                println("step ${i / 1_000_000}M, depth=${step.time}, max=$maxGeodes, stack size=${stack.size}")
+            }
 
+            val oldMax = maxGeodes
             val geodes = step.resources.getOrDefault(Resource.Geode, 0)
             maxGeodes = maxOf(maxGeodes, geodes)
-            maxGeodesAtStep[step.time()] = maxOf(geodes, maxGeodesAtStep.getOrDefault(step.time(), 0))
+            maxGeodesAtStep[step.time] = maxOf(geodes, maxGeodesAtStep.getOrDefault(step.time, 0))
 
-            val remainingTime = 1 + MAX_TURNS - step.time()
+            if (maxGeodes > oldMax && step.time == MAX_TURNS + 1) {
+                println("New best found $i ${step.robots} -> $maxGeodes")
+            }
+
+            val remainingTime = 1 + MAX_TURNS - step.time
             if (remainingTime <= 0) {
                 continue
             }
@@ -104,7 +115,7 @@ private object Robots {
                 continue
             }
 
-            if (maxGeodesAtStep[step.time()]!! > geodes + 1) {
+            if (maxGeodesAtStep[step.time]!! > geodes + 2) {
                 continue
             }
 //            if (geodes + 2 < maxGeodes) {
@@ -133,12 +144,11 @@ private object Robots {
         else -> throw Error("Failed to parse resource: $string")
     }
 
-    private data class Step(val resources: Map<Resource, Int>, val robots: Map<Resource, Int>, val parent: Step?) {
-        fun time(): Int = (parent?.time() ?: 0) + 1
+    private data class Step(val resources: Map<Resource, Int>, val robots: Map<Resource, Int>, val time: Int) {
         fun nextStepWithIdle(): Step = Step(
             nextResources(),
             robots,
-            this
+            time + 1
         )
 
         fun nextStepWithBuild(robotType: Resource, cost: Map<Resource, Int>): Step {
@@ -147,7 +157,7 @@ private object Robots {
             }
             val nextRobots = robots.toMutableMap()
             nextRobots[robotType] = robots.getOrDefault(robotType, 0) + 1
-            return Step(resources, nextRobots, this)
+            return Step(resources, nextRobots, time + 1)
         }
 
         fun hasEnough(cost: Map<Resource, Int>): Boolean =
@@ -160,5 +170,11 @@ private object Robots {
                 put(it, resources.getOrDefault(it, 0) + robots.getOrDefault(it, 0))
             }
         }
+
+        fun fingerprint(): String = "$time.${
+            Resource.values().map { robots.getOrDefault(it, 0) }.joinToString("_")
+        }.${
+            Resource.values().map { resources.getOrDefault(it, 0) }.joinToString("_")
+        }"
     }
 }
