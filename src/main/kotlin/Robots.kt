@@ -40,7 +40,7 @@ private object Robots {
             Resource.values().forEach { resource ->
                 put(resource, blueprint.recipes.maxOf { it.value.cost.getOrDefault(resource, 0) })
             }
-        }
+        }.plus(Pair(Resource.Geode, Int.MAX_VALUE))
         println("Max costs $maxCost")
         fun isGoodStep(step: Step, resource: Resource): Boolean {
 //            println("$resource, $maxCost")
@@ -53,8 +53,10 @@ private object Robots {
             return true
         }
 
-        // TODO: Cap resources when no longer relevant
-        fun normalizeNextStep(nextStep: Step): Step = nextStep
+        fun normalizeNextStep(nextStep: Step): Step {
+            val resources = nextStep.resources.mapValues { it -> minOf(it.value, maxCost[it.key]!! * 3) }
+            return Step(resources, nextStep.robots, nextStep.time)
+        }
 
         fun nextSteps(step: Step): List<Step> {
             val result = mutableListOf<Step>()
