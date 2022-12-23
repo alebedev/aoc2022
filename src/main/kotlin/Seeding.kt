@@ -7,14 +7,25 @@ private object Seeding {
         var board = Board(readInput())
         println("Initial")
         board.visualize()
-        for (i in 0 until 10) {
+        var i = 0
+        while (true) {
+            println("$i")
             val direction = Direction.values()[i % 4]
-            board = board.next(direction)
-            println("after turn ${i + 1}")
-            board.visualize()
+            val (nextBoard, moved) = board.next(direction)
+            if (moved == 0) {
+                println("Stable after turn ${i + 1}")
+                break
+            }
+            board = nextBoard
+            i += 1
         }
+//        for (i in 0 until 10) {
+//            board = board.next(direction)
+//            println("after turn ${i + 1}")
+//            board.visualize()
+//        }
 //        board.visualize()
-        println("Empty cells after 10 rounds: ${board.emptyCells()}")
+//        println("Empty cells after 10 rounds: ${board.emptyCells()}")
     }
 
     private fun readInput(): Set<Pos> {
@@ -39,12 +50,12 @@ private object Seeding {
             println()
         }
 
-        fun next(firstLook: Direction): Board {
+        fun next(firstLook: Direction): Pair<Board, Int> {
             val firstLookIndex = Direction.values().indexOf(firstLook)
             val lookDirections = Direction.values().toList().subList(firstLookIndex, Direction.values().size)
                 .plus(Direction.values().sliceArray(0 until firstLookIndex))
             require(lookDirections.size == Direction.values().size && lookDirections.first() == firstLook)
-            println("Look directions: $lookDirections")
+//            println("Look directions: $lookDirections")
 
             val moves = mutableMapOf<Pos, Pos>()
             for (elf in elves) {
@@ -56,7 +67,7 @@ private object Seeding {
                             break
                         }
                     }
-                    println("Move $elf -> $nextPos")
+//                    println("Move $elf -> $nextPos")
                 }
                 moves[elf] = nextPos
             }
@@ -79,7 +90,8 @@ private object Seeding {
                 }
             }.toSet()
 
-            return Board(nextElves)
+            val moveCount = nextElves.count { it !in elves }
+            return Pair(Board(nextElves), moveCount)
         }
 
         fun emptyCells(): Int {
