@@ -5,17 +5,25 @@ fun main() = Blizzards.solve()
 
 private object Blizzards {
     fun solve() {
-        val board = readInput()
+        var board = readInput()
 
+        val start = Pos(1, 0)
         val target = Pos(board.cells.last().indexOfFirst { it is Space }, board.cells.size - 1)
-
         val initialPath = Path(
-            Pos(1, 0),
+            start,
             target,
             0
         )
-        val bestLen = findPath(initialPath, board)
-        println("Best path takes $bestLen steps")
+        val bestFwd = findPath(initialPath, board)
+        println("Best path S->F takes $bestFwd steps")
+        (1..bestFwd).forEach { board = board.next() }
+        val backPath = Path(target, start, 0)
+        val bestBack = findPath(backPath, board)
+        println("Best path F->S takes $bestBack steps")
+        (1..bestBack).forEach { board = board.next() }
+        val bestBackAgain = findPath(initialPath, board)
+        println("Best path S->F (again) takes $bestBackAgain steps")
+        println("Total: ${bestFwd + bestBack + bestBackAgain}")
     }
 
     private fun findPath(initialPath: Path, initialBoard: Board): Int {
@@ -33,7 +41,7 @@ private object Blizzards {
             else visited.add(path)
 
             val nextTurn = path.turn + 1
-            println("$nextTurn $path")
+//            println("$nextTurn $path")
             if (boards.size == nextTurn) {
                 boards.add(boards.last().next())
             }
