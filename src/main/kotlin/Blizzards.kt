@@ -1,13 +1,55 @@
+import java.util.*
+import kotlin.math.abs
+
 fun main() = Blizzards.solve()
 
 private object Blizzards {
     fun solve() {
-        var board = readInput()
-        board.visualize()
-        for (i in 0..10) {
-            board = board.next()
-            board.visualize()
+        val board = readInput()
+
+        val target = Pos(board.cells.last().indexOfFirst { it is Space }, board.cells.size - 1)
+
+        val initialPath = Path(
+            Pos(1, 0),
+            target,
+            0
+        )
+        val bestLen = findPath(initialPath, board)
+        println("Best path takes $bestLen steps")
+    }
+
+    private fun findPath(initialPath: Path, initialBoard: Board): Int {
+        val boards = mutableListOf(initialBoard)
+        val queue = PriorityQueue<Path>()
+        val visited = mutableSetOf<Path>()
+        queue.add(initialPath)
+        while (queue.isNotEmpty()) {
+            val path = queue.remove()
+            if (path.pos == path.target) {
+                return path.turn
+            }
+
+            if (path in visited) continue
+            else visited.add(path)
+
+            val nextTurn = path.turn + 1
+            println("$nextTurn $path")
+            if (boards.size == nextTurn) {
+                boards.add(boards.last().next())
+            }
+            val nextBoard = boards[nextTurn]
+            val nextPositions = listOf(
+                path.pos,
+                Pos(path.pos.x - 1, path.pos.y), Pos(path.pos.x + 1, path.pos.y),
+                Pos(path.pos.x, path.pos.y - 1), Pos(path.pos.x, path.pos.y + 1)
+            ).filter { pos ->
+                (nextBoard.cells.getOrNull(pos.y)?.getOrNull(pos.x) as? Space)?.winds?.isEmpty() ?: false
+            }
+            nextPositions.forEach { pos ->
+                queue.add(Path(pos, path.target, nextTurn))
+            }
         }
+        return -1
     }
 
     private fun readInput(): Board {
@@ -88,12 +130,12 @@ private object Blizzards {
             // Simplified wrapping, assumes walls are always in outer row
             if (nextX == 0) {
                 nextX = width() - 2
-            } else if (nextX == width() - 1) {
+            } else if (nextX >= width() - 1) {
                 nextX = 1
             }
             if (nextY == 0) {
-                nextY = height()
-            } else if (nextY == height() - 1) {
+                nextY = height() - 2
+            } else if (nextY >= height() - 1) {
                 nextY = 1
             }
             return Pos(nextX, nextY)
@@ -117,9 +159,9 @@ private object Blizzards {
 
     data class Pos(val x: Int, val y: Int)
 
-    data class Path(val pos: Pos, val target: Pos, val board: Board, val turn: Int) : Comparable<Path> {
-        override fun compareTo(other: Path): Int {
-            TODO("Not yet implemented")
-        }
+    data class Path(val pos: Pos, val target: Pos, val turn: Int) : Comparable<Path> {
+        override fun compareTo(other: Path): Int = minTurnsToTarget().compareTo(other.minTurnsToTarget())
+
+        private fun minTurnsToTarget() = abs(target.x - pos.x) + abs(target.y - pos.y) + turn
     }
 }
