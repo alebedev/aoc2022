@@ -6,10 +6,18 @@ private object AocMap {
     fun solve() {
         val (board, moves) = readInput()
         println("$moves")
-        board.print()
-        val pos = applyMoves(board, moves)
+//        board.print()
+//        val pos = applyMoves(board, moves)
         println("Board size ${board.cells.size}x${board.cells.first().size}")
-        println("After moves: $pos ${getScore(pos)}")
+        println("Cube size ${board.cubeSize()}")
+        // Hardcoded for input shape
+        val cubeRegions = listOf(
+            Pair(0, 1), Pair(0, 2),
+            Pair(1, 1),
+            Pair(2, 0), Pair(2, 1),
+            Pair(3, 0)
+        )
+//        println("After moves: $pos ${getScore(pos)}")
     }
 
     private fun applyMoves(board: Board, moves: List<Move>): State {
@@ -93,6 +101,10 @@ private object AocMap {
     data class Move(val len: Int, val rotateRight: Int)
 
     data class Board(val cells: List<List<Cell>>) {
+        fun cubeSize(): Int {
+            return cells.first().count { it != Cell.None } / 2
+        }
+
         fun findInitialState(): State {
             return State(cells.first().indexOfFirst { it == Cell.Empty }, 0, Facing.Right)
         }
